@@ -20,7 +20,7 @@ var exec = require('child_process').exec;
 module.exports = function(grunt) {
 
   var DESC = 'Increment the version, commit, tag and push.';
-  grunt.registerTask('bump', DESC, function(versionType, incOrCommitOnly) {
+  grunt.registerMultiTask('bump', DESC, function(target, incOrCommitOnly) {
     var opts = this.options({
       bumpVersion: true,
       files: ['package.json'],
@@ -34,7 +34,8 @@ module.exports = function(grunt) {
       push: true,
       pushTo: 'upstream',
       gitDescribeOptions: '--tags --always --abbrev=1 --dirty=-d',
-      globalReplace: false
+      globalReplace: false,
+      versionType: undefined
     });
 
     if (incOrCommitOnly === 'bump-only') {
@@ -82,7 +83,7 @@ module.exports = function(grunt) {
 
 
     // GET VERSION FROM GIT
-    runIf(opts.bumpVersion && versionType === 'git', function(){
+    runIf(opts.bumpVersion && opts.versionType === 'git', function(){
       exec('git describe ' + opts.gitDescribeOptions, function(err, stdout, stderr){
         if (err) {
           grunt.fatal('Can not get a version number using `git describe`');
@@ -99,7 +100,7 @@ module.exports = function(grunt) {
         var version = null;
         var content = grunt.file.read(file).replace(VERSION_REGEXP, function(match, prefix, parsedVersion, suffix) {
           gitVersion = gitVersion && parsedVersion + '-' + gitVersion;
-          version = exactVersionToSet || gitVersion || semver.inc(parsedVersion, versionType || 'patch');
+          version = exactVersionToSet || gitVersion || semver.inc(parsedVersion, opts.versionType || 'patch');
           return prefix + version + suffix;
         });
 
