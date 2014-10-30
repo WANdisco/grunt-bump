@@ -151,13 +151,23 @@ module.exports = function(grunt) {
     runIf(opts.commit, function() {
       var commitMessage = opts.commitMessage.replace('%VERSION%', globalVersion);
 
-      exec('git commit ' + opts.commitFiles.join(' ') + ' -m "' + commitMessage + '"', function(err, stdout, stderr) {
-        if (err) {
-          grunt.fatal('Can not create the commit:\n  ' + stderr);
+      //check if there are staged files
+      exec ('git diff --cached', function(err, stdout, stderr) {
+        if (stdout){
+          exec('git commit ' + opts.commitFiles.join(' ') + ' -m "' + commitMessage + '"', function(err, stdout, stderr) {
+          if (err) {
+            grunt.fatal('Can not create the commit:\n  ' + stderr);
+          }
+          grunt.log.ok('Committed as "' + commitMessage + '"');
+          });
         }
-        grunt.log.ok('Committed as "' + commitMessage + '"');
+        else{
+          grunt.log.ok('No changes to commit');
+        }
         next();
       });
+
+
     });
 
 
