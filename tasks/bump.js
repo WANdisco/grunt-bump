@@ -151,22 +151,37 @@ module.exports = function(grunt) {
     runIf(opts.commit, function() {
       var commitMessage = opts.commitMessage.replace('%VERSION%', globalVersion);
 
-      //check if there are staged files
-      exec ('git diff --cached', function(err, stdout, stderr) {
-        if (stdout){
-          exec('git commit ' + opts.commitFiles.join(' ') + ' -m "' + commitMessage + '"', function(err, stdout, stderr) {
+      //check if files are under version control and if not add them
+      grunt.file.expand(opts.commitFiles).forEach(function(file, idx) {
+         exec ('git ls-files '+file+' --error-unmatch', function(err, stdout, stderr) {
           if (err) {
-            grunt.fatal('Can not create the commit:\n  ' + stderr);
+            exec('git add ' + opts.commitFiles.join(' '), function(err, stdout, stderr) {
+              if (err) {
+                grunt.fatal('Can not add file:\n  ' + stderr);
+              }
+            });
           }
-          grunt.log.ok('Committed as "' + commitMessage + '"');
-          });
+         });
+      });
+
+      exec ('git diff '+opts.commitFiles.join(' '), function(err, stdout, stderr) {
+        if (stdout){
+
+          exec('git commit ' + opts.commitFiles.join(' ') + ' -m "' + commitMessage + '"', function(err, stdout, stderr) {
+            if (err) {
+              grunt.fatal('Can not create the commit:\n  ' + stderr);
+            }
+
+            grunt.log.ok('Committed as "' + commitMessage + '"');
+
+            });
+
         }
         else{
           grunt.log.ok('No changes to commit');
         }
         next();
       });
-
 
     });
 
